@@ -1,11 +1,13 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
 	"fmt"
+	"os"
+	"strings"
+	"text/tabwriter"
 
 	"github.com/spf13/cobra"
 )
@@ -22,7 +24,50 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("list called")
+
+		// Open the file with read
+		todosFile, err := os.OpenFile(CSV_FILENAME, os.O_RDONLY, os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+		defer todosFile.Close()
+
+		todos, err := GetTodos(todosFile)
+
+		if err != nil {
+			panic(err)
+		}
+
+		ListCsvContents(todos)
 	},
+}
+
+func makeDividers(word string, dividerCharacter string) string {
+	s := make([]string, len(word))
+	for i := range s {
+		s[i] = dividerCharacter
+	}
+
+	return strings.Join(s, "")
+}
+
+func ListCsvContents(todos []*Todo) {
+	w := tabwriter.NewWriter(os.Stdout, 0, 8, 1, '\t', tabwriter.TabIndent)
+	defer w.Flush()
+
+	// header row
+	header_row := "ID\tDescription\tCreated At\tCompleted?"
+	fmt.Fprintln(w, header_row)
+
+	// divider row
+	dividers := []string{makeDividers("ID", "-"), makeDividers("Description", "-"), makeDividers("Created At", "-"), makeDividers("Completed?", "-")}
+	fmt.Fprintln(w, strings.Join(dividers, "\t"))
+
+	// print data as tabbed columns
+	for _, todo := range todos {
+		fmt.Fprintln(w, todo.String())
+	}
+
 }
 
 func init() {
