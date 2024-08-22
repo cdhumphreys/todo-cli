@@ -1,12 +1,14 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 
+	"github.com/gocarina/gocsv"
 	"github.com/spf13/cobra"
 )
 
@@ -22,6 +24,36 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("complete called")
+		taskId, err := strconv.Atoi(args[0])
+
+		if err != nil {
+			panic(err)
+		}
+
+		// Open the file with read
+		todosFile, err := os.OpenFile(CSV_FILENAME, os.O_RDWR|os.O_TRUNC, os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+		defer todosFile.Close()
+
+		todos, err := GetTodos(todosFile)
+
+		if err != nil {
+			panic(err)
+		}
+
+		for _,todo := range todos {
+			fmt.Println(todo)
+			if todo.ID == taskId {
+				todo.Completed = true
+			}
+		}
+		
+		// Save the CSV back to the file
+		if err := gocsv.MarshalFile(&todos, todosFile); err != nil {
+			panic(err)
+		}
 	},
 }
 

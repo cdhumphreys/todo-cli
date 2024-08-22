@@ -28,6 +28,7 @@ to quickly create a Cobra application.`,
 		// Open the file with read
 		todosFile, err := os.OpenFile(CSV_FILENAME, os.O_RDONLY, os.ModePerm)
 		if err != nil {
+			fmt.Println("here")
 			panic(err)
 		}
 		defer todosFile.Close()

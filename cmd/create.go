@@ -5,7 +5,11 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
+	"time"
 
+	"github.com/gocarina/gocsv"
 	"github.com/spf13/cobra"
 )
 
@@ -19,8 +23,42 @@ var createCmd = &cobra.Command{
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("create called with args", args)
-		// var todoDescription = args[0]
+		var todoDescription = args[0]
 
+		if todoDescription == "" {
+			panic("no todo description given")
+		}
+
+		// Open the file with read
+		todosFile, err := os.OpenFile(CSV_FILENAME, os.O_CREATE|os.O_RDWR, os.ModePerm)
+		if err != nil {
+			panic(err)
+		}
+		defer todosFile.Close()
+
+			// Reset the file reader
+		if _, err := todosFile.Seek(0, io.SeekStart); err != nil {
+			panic(err)
+		}
+
+		newTodos := []*Todo{}
+
+		todos, err := GetTodos(todosFile)
+		if err != nil {
+			fmt.Println("error reading todos", err)
+		}
+
+		if err == nil {
+			newTodos = append(newTodos, todos...)
+		}
+
+		newTodos = append(newTodos, &Todo{len(newTodos), todoDescription,time.Now().Format(TimeFormat), false})
+
+		fmt.Println(newTodos)
+
+		if marshalFileError := gocsv.MarshalFile(&newTodos, todosFile); marshalFileError != nil {
+			panic(marshalFileError)
+		}
 	},
 }
 
