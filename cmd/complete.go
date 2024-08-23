@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/gocarina/gocsv"
 	"github.com/spf13/cobra"
 )
 
@@ -31,9 +30,11 @@ to quickly create a Cobra application.`,
 		}
 
 		// Open the file with read
-		todosFile, err := os.OpenFile(CSV_FILENAME, os.O_RDWR|os.O_TRUNC, os.ModePerm)
+		todosFile, err := os.OpenFile(CSV_FILENAME, os.O_RDWR, os.ModePerm)
 		if err != nil {
-			panic(err)
+			// panic(err)
+			fmt.Println("No file exists!")
+			return
 		}
 		defer todosFile.Close()
 
@@ -42,18 +43,20 @@ to quickly create a Cobra application.`,
 		if err != nil {
 			panic(err)
 		}
-
-		for _,todo := range todos {
-			fmt.Println(todo)
+		var found Todo
+		for _, todo := range todos {
 			if todo.ID == taskId {
 				todo.Completed = true
+				found = *todo
 			}
 		}
-		
-		// Save the CSV back to the file
-		if err := gocsv.MarshalFile(&todos, todosFile); err != nil {
-			panic(err)
+		if found.Description == "" {
+			fmt.Printf("Task with ID %s not found", strconv.Itoa(taskId))
+		} else {
+			fmt.Printf("Completed task %s: \"%s\"", strconv.Itoa(found.ID), found.Description)
+
 		}
+		WriteTodos(todosFile, todos)
 	},
 }
 
