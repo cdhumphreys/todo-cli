@@ -5,7 +5,10 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 
+	"github.com/samber/lo"
 	"github.com/spf13/cobra"
 )
 
@@ -21,10 +24,43 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("remove called")
-		// id, err := strconv.Atoi(args[0])
-		// if err != nil {
-		// 	log.Fatalln("Couldn't convert id to int")
-		// }
+		fmt.Println("complete called")
+		taskId, err := strconv.Atoi(args[0])
+
+		if err != nil {
+			panic(err)
+		}
+
+		// Open the file with read
+		todosFile, err := os.OpenFile(CSV_FILENAME, os.O_RDWR, os.ModePerm)
+		if err != nil {
+			// panic(err)
+			fmt.Println("No file exists!")
+			return
+		}
+		defer todosFile.Close()
+
+		todos, err := GetTodos(todosFile)
+
+		if err != nil {
+			panic(err)
+		}
+
+		newTodos := []*Todo{}
+
+		deleteTodo, deletedTaskIdx, ok := lo.FindIndexOf(todos, func(t *Todo) bool {
+			return t.ID == taskId
+		})
+		if !ok {
+			fmt.Printf("Could not find task with ID %s", strconv.Itoa(taskId))
+			return
+		}
+		newTodos = append(newTodos, todos[:deletedTaskIdx]...)
+		newTodos = append(newTodos, todos[deletedTaskIdx+1:]...)
+
+		fmt.Printf("Removed task %s: \"%s\"", strconv.Itoa(deleteTodo.ID), deleteTodo.Description)
+
+		WriteTodos(todosFile, newTodos)
 
 	},
 }
