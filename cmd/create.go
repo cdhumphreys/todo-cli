@@ -9,7 +9,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/gocarina/gocsv"
 	"github.com/spf13/cobra"
 )
 
@@ -23,10 +22,16 @@ var createCmd = &cobra.Command{
 	`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("create called with args", args)
+
+		if len(args) == 0 {
+			fmt.Println("No description given")
+			return
+		}
 		var todoDescription = args[0]
 
 		if todoDescription == "" {
-			panic("no todo description given")
+			fmt.Println("No description given")
+			return
 		}
 
 		// Open the file with read
@@ -36,7 +41,7 @@ var createCmd = &cobra.Command{
 		}
 		defer todosFile.Close()
 
-			// Reset the file reader
+		// Reset the file reader
 		if _, err := todosFile.Seek(0, io.SeekStart); err != nil {
 			panic(err)
 		}
@@ -44,21 +49,14 @@ var createCmd = &cobra.Command{
 		newTodos := []*Todo{}
 
 		todos, err := GetTodos(todosFile)
-		if err != nil {
-			fmt.Println("error reading todos", err)
-		}
 
 		if err == nil {
 			newTodos = append(newTodos, todos...)
 		}
 
-		newTodos = append(newTodos, &Todo{len(newTodos), todoDescription,time.Now().Format(TimeFormat), false})
+		newTodos = append(newTodos, &Todo{len(newTodos), todoDescription, time.Now().Format(TimeFormat), false})
 
-		fmt.Println(newTodos)
-
-		if marshalFileError := gocsv.MarshalFile(&newTodos, todosFile); marshalFileError != nil {
-			panic(marshalFileError)
-		}
+		WriteTodos(todosFile, newTodos)
 	},
 }
 
@@ -75,15 +73,3 @@ func init() {
 	// is called directly, e.g.:
 	// createCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
-
-// func addTask(file *os.File, task_description string) {
-
-// 	w := csv.NewWriter(file)
-// 	// Write any buffered data to underlying writer
-// 	defer w.Flush()
-
-// 	// Add header row
-// 	if err := w.Write(task_description); err != nil {
-// 		log.Fatalln("error writing headers to csv:", err)
-// 	}
-// }

@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -92,4 +93,18 @@ func GetTodos(file *os.File) ([]*Todo, error) {
 	}
 
 	return todos, nil
+}
+
+func WriteTodos(todosFile *os.File, todos []*Todo) {
+	// clear file so we don't get duplicates
+	todosFile.Truncate(0)
+
+	// Reset the file reader position (needed before marshalling/saving file)
+	if _, err := todosFile.Seek(0, io.SeekStart); err != nil {
+		panic(err)
+	}
+
+	if marshalFileError := gocsv.MarshalFile(&todos, todosFile); marshalFileError != nil {
+		panic(marshalFileError)
+	}
 }
